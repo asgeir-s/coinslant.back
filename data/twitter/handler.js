@@ -22,11 +22,11 @@ const firebaseAdmin = require("firebase-admin")
 // Get a database reference to our blog
 const database = firebaseAdmin.database()
 const coinsRef = database.ref("/coins/")
+const databaseRoot = database.ref('/')
 
 module.exports.getUsers = (event, context, callback) => {
   return updateFollowCount(event).then(res => callback(null, res))
 }
-
 
 function updateFollowCount(event) {
   let coins
@@ -44,19 +44,26 @@ function updateFollowCount(event) {
       return usersRes.data
     })
     .then(users => {
-      Object.keys(coins).map(coinName => {
+      const timestamp = Date.now()
+      return Object.keys(coins).reduce((prev, coinName) => {
         const twitterNameOfCoin = coins[coinName].twitter.name
         const coinTwitterUser = users.find(user => user.screen_name.toLowerCase() == twitterNameOfCoin.toLowerCase())
-        coinsRef.child(coinName).child('twitter').update({
-          "followers": coinTwitterUser.followers_count
-        })
-      })
+        prev['coins/' + coinName + '/twitter/followers'] = coinTwitterUser.followers_count
+        prev['history/twitter/' + coinName + '/' + timestamp] = coinTwitterUser.followers_count
+        prev['coins/' + coinName + '/twitter/followerDelta24'] = coinTwitterUser.followers_count - coins[coinName].twitter.followers
+        return prev
+      }, {})
+    })
+    .then(updateObject => {
+      console.log('updateObject: ' + JSON.stringify(updateObject, null, 2))
+      databaseRoot.update(updateObject)
 
       return {
         statusCode: 200,
         body: JSON.stringify({
-          message: `updated the twitter follow count for ${users.length}) coins`,
-          input: event
+          message: `updated the twitter follow count`,
+          input: event,
+          updateObject: updateObject
         })
       }
     })
