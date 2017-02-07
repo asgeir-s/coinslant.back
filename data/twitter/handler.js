@@ -45,7 +45,6 @@ function updateFollowCount(event) {
     })
     .then(users => {
       Object.keys(coins).map(coinName => {
-        console.log('coinName: ' + coinName)
         const twitterNameOfCoin = coins[coinName].twitter.name
         const coinTwitterUser = users.find(user => user.screen_name.toLowerCase() == twitterNameOfCoin.toLowerCase())
         coinsRef.child(coinName).child('twitter').update({
