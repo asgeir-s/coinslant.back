@@ -82,11 +82,4 @@ function updateFollowCount(event, coinsRef, databaseRootRef) {
     return T.get('users/lookup', { screen_name: users })
       .then(res => res.data)
   }
-
-  function log(message) {
-    return function (data) {
-      console.log(message)
-      return data
-    }
-  }
 }
