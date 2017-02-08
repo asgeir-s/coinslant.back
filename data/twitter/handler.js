@@ -20,51 +20,73 @@ const firebaseAdmin = require("firebase-admin")
   })
 }
 // Get a database reference to our blog
-const database = firebaseAdmin.database()
-const coinsRef = database.ref("/coins/")
-const databaseRoot = database.ref('/')
-
-module.exports.getUsers = (event, context, callback) => {
-  return updateFollowCount(event).then(res => callback(null, res))
+{
+  const database = firebaseAdmin.database()
+  var coinsRef = database.ref("/coins/")
+  var databaseRootRef = database.ref('/')
 }
 
-function updateFollowCount(event) {
-  let coins
-  return coinsRef.once('value')
-    .then(coinsSnap => {
-      coins = coinsSnap.val()
-      return Object.keys(coins).map(coin => coins[coin].twitter.name)
-    })
-    .then(twitterUsernames => {
-      console.log(`got ${twitterUsernames.length} twitter usernames from the database: ${twitterUsernames}`)
-      return T.get('users/lookup', { screen_name: twitterUsernames })
-    })
-    .then(usersRes => {
-      console.log(`got ${usersRes.data.length} twitter usernames as respondse from Twitter`)
-      return usersRes.data
-    })
-    .then(users => {
-      const timestamp = Date.now()
-      return Object.keys(coins).reduce((prev, coinName) => {
-        const twitterNameOfCoin = coins[coinName].twitter.name
-        const coinTwitterUser = users.find(user => user.screen_name.toLowerCase() == twitterNameOfCoin.toLowerCase())
-        prev['coins/' + coinName + '/twitter/followers'] = coinTwitterUser.followers_count
-        prev['history/twitter/' + coinName + '/' + timestamp] = coinTwitterUser.followers_count
-        prev['coins/' + coinName + '/twitter/followerDelta24'] = coinTwitterUser.followers_count - coins[coinName].twitter.followers
-        return prev
-      }, {})
-    })
-    .then(updateObject => {
-      console.log('updateObject: ' + JSON.stringify(updateObject, null, 2))
-      databaseRoot.update(updateObject)
+module.exports.getUsers = (event, context, callback) => {
+  return updateFollowCount(event, coinsRef, databaseRootRef)
+    .then(res => callback(null, res))
+    .catch(err => callback(err, null))
+}
 
+function updateFollowCount(event, coinsRef, databaseRootRef) {
+  let coins
+  return getDataFromRefOnce(coinsRef)
+    .then(coinsRes => coins = coinsRes)
+    .then(getTwitterNamesFromDb)
+    .then(twitterUsernames =>
+      (console.log(`got ${twitterUsernames.length} twitter usernames from the database: ${twitterUsernames}`), twitterUsernames))
+    .then(getTwitterUsers)
+    .then(twitterUsers =>
+      (console.log(`got ${twitterUsers.length} twitter usernames as respondse from Twitter`), twitterUsers))
+    .then(twitterUsers => createDbUpdateObject(coins, Date.now(), twitterUsers))
+    .then(dbUpdateObject =>
+      (console.log('updateObject: ' + JSON.stringify(dbUpdateObject, null, 2)), dbUpdateObject))
+    .then(dbUpdateObject => databaseRootRef.update(dbUpdateObject))
+    .then(dbUpdateRespondse => {
       return {
         statusCode: 200,
         body: JSON.stringify({
           message: `updated the twitter follow count`,
           input: event,
-          updateObject: updateObject
+          databaseUpdateres: dbUpdateRespondse
         })
       }
     })
+    .catch(err => log('something went wrong: ' + err))
+
+  function createDbUpdateObject(coins, timestamp, twitterUsers) {
+    return Object.keys(coins).reduce((prev, coinName) => {
+      const twitterUsernameForCoin = coins[coinName].twitter.name
+      const twitterUserForCoin = twitterUsers.find(user => user.screen_name.toLowerCase() == twitterUsernameForCoin.toLowerCase())
+      prev['coins/' + coinName + '/twitter/followers'] = twitterUserForCoin.followers_count
+      prev['history/twitter/' + coinName + '/' + timestamp] = twitterUserForCoin.followers_count
+      prev['coins/' + coinName + '/twitter/followerDelta24'] = twitterUserForCoin.followers_count - coins[coinName].twitter.followers
+      return prev
+    }, {})
+  }
+
+  function getDataFromRefOnce(ref) {
+    return ref.once('value')
+      .then(snap => snap.val())
+  }
+
+  function getTwitterNamesFromDb(coins) {
+    return Object.keys(coins).map(coin => coins[coin].twitter.name)
+  }
+
+  function getTwitterUsers(users) {
+    return T.get('users/lookup', { screen_name: users })
+      .then(res => res.data)
+  }
+
+  function log(message) {
+    return function (data) {
+      console.log(message)
+      return data
+    }
+  }
 }
