@@ -26,10 +26,10 @@ const firebaseAdmin = require("firebase-admin")
   var databaseRootRef = database.ref('/')
 }
 
-module.exports.getUsers = (event, context, callback) => {
+module.exports.getUsers = (event, context) => {
   return updateFollowCount(event, coinsRef, databaseRootRef)
-    .then(res => callback(null, res))
-    .catch(err => callback(err, null))
+    .then(res => context.done(null, res))
+    .catch(err => context.done(err, null))
 }
 
 function updateFollowCount(event, coinsRef, databaseRootRef) {
