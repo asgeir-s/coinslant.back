@@ -32,8 +32,8 @@ function updateFollowCount(database, event) {
         .then(getTwitterUsers)
         .then(twitterUsers =>
             (console.log(`got ${twitterUsers.length} twitter users as respondse from Twitter`), twitterUsers))
-        .then(twitterUsers => createNewCoinMetaUpdate('coinslant-meta', coins, twitterUsers))
-        .then(newCoinMetaUpdate => createNewCoinData('coinslant-data', 'coinslant-meta', 'twitter', Date.now(), newCoinMetaUpdate))
+        .then(twitterUsers => createNewCoinMetaUpdateObject('coinslant-meta', coins, twitterUsers))
+        .then(newCoinMetaUpdate => addNewCoinDataToUpdateObject('coinslant-data', 'coinslant-meta', 'twitter', Date.now(), newCoinMetaUpdate))
         .then(dbUpdate => database.batchPut(dbUpdate))
         .then(dbRespondse => {
             if (Object.keys(dbRespondse.UnprocessedItems).length === 0 && dbRespondse.UnprocessedItems.constructor === Object) {
@@ -57,7 +57,7 @@ function updateFollowCount(database, event) {
         .catch(error => console.log('something went wrong:', error))
 
 
-    function createNewCoinMetaUpdate(metaTableName, coins, twitterUsers) {
+    function createNewCoinMetaUpdateObject(metaTableName, coins, twitterUsers) {
         return coins.reduce((prev, coinMeta) => {
             const twitterUsernameForCoin = coinMeta.twitter.username
             const twitterUserForCoin = twitterUsers.find(user => user.screen_name.toLowerCase() == twitterUsernameForCoin.toLowerCase())
@@ -74,7 +74,7 @@ function updateFollowCount(database, event) {
         }, { [metaTableName]: [] })
     }
 
-    function createNewCoinData(dataTableName, metaTableName, dataSource, timestamp, newCoinMetaUpdate) {
+    function addNewCoinDataToUpdateObject(dataTableName, metaTableName, dataSource, timestamp, newCoinMetaUpdate) {
         newCoinMetaUpdate[dataTableName] = []
         return newCoinMetaUpdate[metaTableName].reduce((prev, coinMeta) => {
             const coinsource = coinMeta.PutRequest.Item.coinName + '-' + dataSource // bitcoin-twitter
