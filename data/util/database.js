@@ -4,7 +4,8 @@ exports.init = function (aws) {
     docClient = getDocumentClient(aws)
     const service = {
         metaForCoin: getMetaData.bind(null, docClient, 'coinslant-meta', 'coinName'),
-        metaDataAll: getMetaDataAll.bind(null, docClient, 'coinslant-meta')
+        metaDataAll: getMetaDataAll.bind(null, docClient, 'coinslant-meta'),
+        batchPut: batchPut.bind(null, docClient)
     };
     return service;
 }
@@ -30,6 +31,11 @@ function getMetaDataAll(docClient, tableName) {
     }).promise().then(_ => _.Items)
 }
 
+function batchPut(docClient, update) {
+    return docClient.batchWrite({
+        RequestItems: update
+    }).promise()
+}
 
 /*
 exports.init =  function (aws) {

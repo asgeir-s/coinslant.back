@@ -1,13 +1,11 @@
 'use strict'
 
-// contain secrets
-
 {
     const Database = require('../util/database');
     const twitterSecret = require("./secret/twitter.json")
 
     const Twit = require('twit')
-    var T = new Twit({
+    var twit = new Twit({
         consumer_key: twitterSecret.consumer_key,
         consumer_secret: twitterSecret.consumer_secret,
         app_only_auth: true,
@@ -22,7 +20,6 @@ module.exports.getUsers = (event, context, cb) => {
         .catch(err => context.done(err, null))
 }
 
-
 function updateFollowCount(database, event) {
     let coins
     return database.metaDataAll()
@@ -31,45 +28,67 @@ function updateFollowCount(database, event) {
             return getTwitterNamesFromDb(coinsMeta)
         })
         .then(twitterUsernames =>
-            (console.log(`got ${twitterUsernames.length} twitter usernames from the database: ${twitterUsernames}`), twitterUsernames))
+            (console.log(`got ${twitterUsernames.length} twitter usernames from the database`), twitterUsernames))
         .then(getTwitterUsers)
         .then(twitterUsers =>
-            (console.log(`got ${twitterUsers.length} twitter usernames as respondse from Twitter`), twitterUsers))
-        .then(twitterUsers => createDbUpdateObject(coins, Date.now(), twitterUsers))
-        .then(_ => console.log(JSON.stringify(_, null, 2)))
-        /* .then(dbUpdateObject =>
-             (console.log('updateObject: ' + JSON.stringify(dbUpdateObject, null, 2)), dbUpdateObject))
-         .then(dbUpdateObject => databaseRootRef.update(dbUpdateObject))
-         .then(dbUpdateRespondse => {
-             return {
-                 statusCode: 200,
-                 body: JSON.stringify({
-                     message: `updated the twitter follow count`,
-                     input: event,
-                     databaseUpdateres: dbUpdateRespondse
-                 })
-             }
-         })
-    */
-        .catch(err => log('something went wrong: ' + err))
+            (console.log(`got ${twitterUsers.length} twitter users as respondse from Twitter`), twitterUsers))
+        .then(twitterUsers => createNewCoinMetaUpdate('coinslant-meta', coins, twitterUsers))
+        .then(newCoinMetaUpdate => createNewCoinData('coinslant-data', 'coinslant-meta', 'twitter', Date.now(), newCoinMetaUpdate))
+        .then(dbUpdate => database.batchPut(dbUpdate))
+        .then(dbRespondse => {
+            if (Object.keys(dbRespondse.UnprocessedItems).length === 0 && dbRespondse.UnprocessedItems.constructor === Object) {
+                console.log('successfull write to meta-database and data-database')
+            }
+            else {
+                console.log('error during write to meta-database and/or data-database. Respondse:', dbRespondse)
+            }
+            return dbRespondse
+        })
+        .then(dbRespondse => {
+            return {
+                statusCode: 200,
+                body: JSON.stringify({
+                    message: `updated the twitter follow count`,
+                    input: event,
+                    databaseUpdateres: dbRespondse
+                })
+            }
+        })
+        .catch(error => log('something went wrong:', error))
 
-    function createDbUpdateObject(coins, timestamp, twitterUsers) {
-        return coins.reduce((prev, coin) => {
-            const twitterUsernameForCoin = coin.twitter.username
+
+    function createNewCoinMetaUpdate(metaTableName, coins, twitterUsers) {
+        return coins.reduce((prev, coinMeta) => {
+            const twitterUsernameForCoin = coinMeta.twitter.username
             const twitterUserForCoin = twitterUsers.find(user => user.screen_name.toLowerCase() == twitterUsernameForCoin.toLowerCase())
 
-            coin.twitter.followerDelta24 = twitterUserForCoin.followers_count - coin.twitter.followers
-            coin.twitter.followers = twitterUserForCoin.followers_count
+            coinMeta.twitter.followerDelta24 = twitterUserForCoin.followers_count - coinMeta.twitter.followers
+            coinMeta.twitter.followers = twitterUserForCoin.followers_count
 
-            prev.RequestItems['Table-1'].push({
-                Item: coin
-            })
-            return prev;
-        }, {
-                RequestItems: {
-                    'Table-1': []
+            prev[metaTableName].push({
+                PutRequest: {
+                    Item: coinMeta
                 }
             })
+            return prev;
+        }, { [metaTableName]: [] })
+    }
+
+    function createNewCoinData(dataTableName, metaTableName, dataSource, timestamp, newCoinMetaUpdate) {
+        newCoinMetaUpdate[dataTableName] = []
+        return newCoinMetaUpdate[metaTableName].reduce((prev, coinMeta) => {
+            const coinsource = coinMeta.PutRequest.Item.coinName + '-' + dataSource // bitcoin-twitter
+            prev[dataTableName].push({
+                PutRequest: {
+                    Item: {
+                        'coin-source': coinsource,
+                        'time': timestamp,
+                        'value': coinMeta.PutRequest.Item.twitter.followers
+                    }
+                }
+            })
+            return prev;
+        }, newCoinMetaUpdate)
     }
 }
 
@@ -78,6 +97,6 @@ function getTwitterNamesFromDb(coins) {
 }
 
 function getTwitterUsers(users) {
-    return T.get('users/lookup', { screen_name: users })
+    return twit.get('users/lookup', { screen_name: users })
         .then(res => res.data)
 }
