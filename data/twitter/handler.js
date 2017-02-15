@@ -1,7 +1,7 @@
 'use strict'
 
 {
-    const Database = require('../util/database');
+    const Database = require('./util/database');
     const twitterSecret = require("./secret/twitter.json")
 
     const Twit = require('twit')
@@ -16,8 +16,8 @@
 
 module.exports.getUsers = (event, context, cb) => {
     return updateFollowCount(database, event)
-        .then(_ => context.done(null, _))
-        .catch(err => context.done(err, null))
+        .then(_ => cb(null, _))
+        .catch(err => cb(err))
 }
 
 function updateFollowCount(database, event) {
@@ -54,7 +54,7 @@ function updateFollowCount(database, event) {
                 })
             }
         })
-        .catch(error => log('something went wrong:', error))
+        .catch(error => console.log('something went wrong:', error))
 
 
     function createNewCoinMetaUpdate(metaTableName, coins, twitterUsers) {
