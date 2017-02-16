@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: twitter # NOTE: update this with your service name
+service: github # NOTE: update this with your service name
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -20,9 +20,6 @@ service: twitter # NOTE: update this with your service name
 provider:
   name: aws
   runtime: nodejs4.3
-  memory: 128
-  timeout: 10
-  region: us-east-1
 
 # you can overwrite defaults here
 #  stage: dev
@@ -42,24 +39,23 @@ provider:
       Resource:
         - "arn:aws:dynamodb:us-east-1:494753849073:table/coinslant-data"
         - "arn:aws:dynamodb:us-east-1:494753849073:table/coinslant-meta"
-  
 
 # you can define service wide environment variables here
 #  environment:
 #    variable1: value1
 
 # you can add packaging information here
-package:
-  include:
-    - ../util/**
+#package:
+#  include:
+#    - include-me.js
 #    - include-me-dir/**
 #  exclude:
 #    - exclude-me.js
 #    - exclude-me-dir/**
 
 functions:
-  getUsers:
-    handler: handler.getUsers
+  getStars:
+    handler: handler.getStars
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -75,6 +71,15 @@ functions:
 #      - alexaSkill
 #      - iot:
 #          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
 
 #    Define function environment variables here
 #    environment:

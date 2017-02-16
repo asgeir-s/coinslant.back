@@ -33,7 +33,7 @@ function updateFollowCount(database, event) {
         .then(twitterUsers =>
             (console.log(`got ${twitterUsers.length} twitter users as respondse from Twitter`), twitterUsers))
         .then(twitterUsers => createNewCoinMetaUpdateObject('coinslant-meta', coins, twitterUsers))
-        .then(newCoinMetaUpdate => addNewCoinDataToUpdateObject('coinslant-data', 'coinslant-meta', 'twitter', Date.now(), newCoinMetaUpdate))
+        .then(newCoinMetaUpdate => addNewCoinDataToUpdateObject('coinslant-data', 'coinslant-meta', 'twitter-followers', Date.now(), newCoinMetaUpdate))
         .then(dbUpdate => database.batchPut(dbUpdate))
         .then(dbRespondse => {
             if (Object.keys(dbRespondse.UnprocessedItems).length === 0 && dbRespondse.UnprocessedItems.constructor === Object) {
@@ -62,7 +62,7 @@ function updateFollowCount(database, event) {
             const twitterUsernameForCoin = coinMeta.twitter.username
             const twitterUserForCoin = twitterUsers.find(user => user.screen_name.toLowerCase() == twitterUsernameForCoin.toLowerCase())
 
-            coinMeta.twitter.followerDelta24 = twitterUserForCoin.followers_count - coinMeta.twitter.followers
+            coinMeta.twitter.followersDelta24 = twitterUserForCoin.followers_count - coinMeta.twitter.followers
             coinMeta.twitter.followers = twitterUserForCoin.followers_count
 
             prev[metaTableName].push({
