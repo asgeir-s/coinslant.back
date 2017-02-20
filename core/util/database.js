@@ -49,27 +49,27 @@ function getAllItems(docClient, tableName) {
  * @returns array of updates that are not larger then 25 each
  */
 function splitbatchWriteRequest(updates) {
-    const writeRequests = []; // array of array of requests
+    const writeRequests = [[]]; // array of array of requests
     let writeRequestsIndex = 0;
     let currentNumOfItems = 0;
 
     function addRequest(tableName, writeRequest) {
         if (currentNumOfItems < 25) {
-            writeRequests[writeRequestsIndex].push({
-                [tableName]: writeRequest
-            });
+            writeRequests[writeRequestsIndex][tableName].push(writeRequest);
             currentNumOfItems++;
         }
         else {
-            writeRequests[++writeRequestsIndex].push({
-                [tableName]: writeRequest
-            })
+            writeRequests[++writeRequestsIndex] = [];
+            writeRequests[writeRequestsIndex][tableName] = [];
+            writeRequests[writeRequestsIndex][tableName].push(writeRequest)
             currentNumOfItems = 1;
         }
     }
 
     Object.keys(updates).forEach(tableName => {
-        updates.tableName.forEach(writeRequests => {
+        writeRequests[0][tableName] = [];
+        console.log('tableName:', tableName)
+        updates[tableName].forEach(writeRequests => {
             addRequest(tableName, writeRequests)
         })
     })
@@ -78,8 +78,10 @@ function splitbatchWriteRequest(updates) {
 }
 
 function batchPut(docClient, updates) {
+    console.log('batchPut - updates:', updates)
     const promises = splitbatchWriteRequest(updates)
         .map(_ => {
+            console.log('updaterequest:', JSON.stringify(_))
             return docClient.batchWrite({
                 RequestItems: _
             }).promise()
@@ -87,15 +89,3 @@ function batchPut(docClient, updates) {
 
     return Promise.all(promises);
 }
-
-/*
-exports.init =  function (aws) {
-    getDocumentClient(aws).then(docClient => {
-        const service = {
-            metaForCoin: getMetaData.bind(null, docClient, 'coinslant-meta', 'coinName'),
-            metaDataAll: getMetaDataAll.bind(null, docClient, 'coinslant-meta')
-        };
-        return service;
-    })
-}
-*/

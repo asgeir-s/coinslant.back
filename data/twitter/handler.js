@@ -44,7 +44,7 @@ const extractFollowers = coinsMeta => twitterUsers => {
                 }
             },
             "data": {
-                "github": {
+                "twitter": {
                     "followers": newNumOfFollowers
                 }
             }

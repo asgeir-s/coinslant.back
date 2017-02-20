@@ -1,6 +1,8 @@
 'use strict';
-const githubClient = require('octonode').client();
-
+{
+  const githubSecret = require("./secret/github.json")
+  var githubClient = require('octonode').client(githubSecret.token);
+}
 module.exports.getStars = (coinsMeta, context, cb) => {
   console.log('event:', JSON.stringify(coinsMeta, null, 2))
 
