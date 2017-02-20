@@ -12,6 +12,5 @@
     "octonode": "^0.7.9"
   },
   "devDependencies": {
-    "aws-sdk": "^2.14.0"
   }
 }
