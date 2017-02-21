@@ -1,3 +1,5 @@
+'use strict';
+
 exports.init = (aws) => {
     const lambda = getDocumentClient(aws)
     const service = {

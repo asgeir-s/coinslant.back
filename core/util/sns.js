@@ -1,3 +1,5 @@
+'use strict';
+
 exports.init = (aws, topicArn) => {
     const sns = getDocumentClient(aws)
     const service = {

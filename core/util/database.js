@@ -1,4 +1,5 @@
 // http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/DynamoDB/DocumentClient.html#batchWrite-property
+'use strict';
 
 exports.init = (aws) => {
     const docClient = getDocumentClient(aws)
