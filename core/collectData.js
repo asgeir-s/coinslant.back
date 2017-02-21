@@ -1,11 +1,9 @@
 'use strict';
 
-const numberOfDataCollectRetrys = 5;
-
-module.exports.collectData = (database, lambda, sns, dataCollectLambdas) => {
+module.exports.collectData = (database, lambda, sns, dataCollectLambdas, config) => {
     return database.getAllItems('coinslant-meta')
         .then(coinsMeta => {
-            return Promise.all(dataCollectLambdas.map(_ => collectDataFromFunction(coinsMeta, numberOfDataCollectRetrys, _)))
+            return Promise.all(dataCollectLambdas.map(_ => collectDataFromFunction(coinsMeta, config.dataCollect.retrys, _)))
                 .then(log('data colected from data-colect-functions'))
                 .then(collectedData => {
                     const metaUpdates = createDatabaseMetaUpdates('coinslant-meta', coinsMeta, collectedData);
@@ -13,7 +11,7 @@ module.exports.collectData = (database, lambda, sns, dataCollectLambdas) => {
                     return out;
                 })
         })
-        //.then(database.batchPut)
+        .then(database.batchPut)
         .then(res => {
             return {
                 statusCode: 200,
