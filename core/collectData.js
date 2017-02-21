@@ -15,7 +15,7 @@ module.exports.collectData = (database, lambda, sns, config) => {
         .then(res => {
             return {
                 statusCode: 200,
-                body: JSON.stringify(res),
+                body: `Done! responds from dynamodb: ${JSON.stringify(res)}`,
             };
         })
 
