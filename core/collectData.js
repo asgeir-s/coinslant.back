@@ -1,9 +1,9 @@
 'use strict';
 
-module.exports.collectData = (database, lambda, sns, dataCollectLambdas, config) => {
+module.exports.collectData = (database, lambda, sns, config) => {
     return database.getAllItems('coinslant-meta')
         .then(coinsMeta => {
-            return Promise.all(dataCollectLambdas.map(_ => collectDataFromFunction(coinsMeta, config.dataCollect.retrys, _)))
+            return Promise.all(config.dataCollect.functions.map(_ => collectDataFromFunction(coinsMeta, _, config.dataCollect.retrys)))
                 .then(log('data colected from data-colect-functions'))
                 .then(collectedData => {
                     const metaUpdates = createDatabaseMetaUpdates('coinslant-meta', coinsMeta, collectedData);
@@ -20,22 +20,22 @@ module.exports.collectData = (database, lambda, sns, dataCollectLambdas, config)
         })
 
 
-    function collectDataFromFunction(coinsMeta, retrysLeft, functionName) {
+    function collectDataFromFunction(coinsMeta, functionName, retrysLeft) {
         return new Promise((resolve, reject) => {
             if (retrysLeft < 0) {
                 console.log(`all function retrys for function ${functionName} has failed. Returns an empety update object (no updates from this datacollector is included in this update)`);
-                sns.publish({
-                    "subject": `Data collect function: ${functionName} has failed`,
-                    "message": `All retrys for function ${functionName} has failed. An empety update object was returned instead (no updates from this datacollector is included in this update)`
-                })
+                sns.publish(`Data collect function: ${functionName} has failed`,
+                    `All retrys for function ${functionName} has failed. An empety update object was returned instead (no updates from this datacollector is included in this update)`)
                 resolve({});
             }
-            resolve(lambda.invoke(coinsMeta, functionName)
-                .catch(error => {
-                    console.log(`${functionName} (lambda data collect function) returned an error ${error}`)
-                    console.log('starting first retry')
-                    return collectDataFromFunction(lambda, functionName, retrysLeft--)
-                }))
+            else {
+                resolve(lambda.invoke(coinsMeta, functionName)
+                    .catch(error => {
+                        console.log(`${functionName} (lambda data collect function) returned an error ${error}`)
+                        console.log('retrys left:', retrysLeft)
+                        return collectDataFromFunction(coinsMeta, functionName, retrysLeft - 1)
+                    }))
+            }
 
         })
     }

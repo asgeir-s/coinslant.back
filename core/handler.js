@@ -7,11 +7,10 @@ const config = require('./config')
   var lambda = require('./util/lambda').init(aws);
   var sns = require('./util/sns').init(aws, config.sns.errorTopicArn)
 }
-const dataCollectLambdas = require('./data-collect-functions.json')
 const collectDataFunction = require('./collectData').collectData
 
 module.exports.collectData = (event, context, cb) => {
-  collectDataFunction(database, lambda, sns, dataCollectLambdas, config)
+  collectDataFunction(database, lambda, sns, config)
     .then(_ => cb(null, _))
     .catch(_ => cb(_))
 };
