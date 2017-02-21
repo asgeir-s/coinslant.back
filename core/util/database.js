@@ -68,7 +68,6 @@ function splitbatchWriteRequest(updates) {
 
     Object.keys(updates).forEach(tableName => {
         writeRequests[0][tableName] = [];
-        console.log('tableName:', tableName)
         updates[tableName].forEach(writeRequests => {
             addRequest(tableName, writeRequests)
         })
@@ -78,10 +77,8 @@ function splitbatchWriteRequest(updates) {
 }
 
 function batchPut(docClient, updates) {
-    console.log('batchPut - updates:', updates)
     const promises = splitbatchWriteRequest(updates)
         .map(_ => {
-            console.log('updaterequest:', JSON.stringify(_))
             return docClient.batchWrite({
                 RequestItems: _
             }).promise()
