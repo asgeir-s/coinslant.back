@@ -42,6 +42,11 @@ provider:
       Resource:
         - "arn:aws:dynamodb:us-east-1:494753849073:table/coinslant-data"
         - "arn:aws:dynamodb:us-east-1:494753849073:table/coinslant-meta"
+    - Effect: "Allow"
+      Action:
+        - "sns:Publish"
+      Resource:
+        - "arn:aws:sns:us-east-1:494753849073:dataCollectError"
 
 # you can define service wide environment variables here
 #  environment:
