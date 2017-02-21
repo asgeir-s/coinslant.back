@@ -78,11 +78,10 @@ function splitbatchWriteRequest(updates) {
 
 function batchPut(docClient, updates) {
     const promises = splitbatchWriteRequest(updates)
-        .map(_ => {
-            return docClient.batchWrite({
-                RequestItems: _
-            }).promise()
-        })
+        .map(_ => docClient.batchWrite({
+            RequestItems: _
+        }).promise()
+        )
 
     return Promise.all(promises);
 }
