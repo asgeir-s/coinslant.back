@@ -6,12 +6,13 @@ module.exports.collectData = (database, lambda, sns, config) => {
             return Promise.all(config.dataCollect.functions.map(_ => collectDataFromFunction(coinsMeta, _, config.dataCollect.retrys)))
                 .then(log('data colected from data-colect-functions'))
                 .then(collectedData => {
-                    const metaUpdates = createDatabaseMetaUpdates('coinslant-meta', coinsMeta, collectedData);
-                    const out = addDatabaseDataUpdates('coinslant-data', 'coinslant-meta', metaUpdates, collectedData, Date.now(), coinsMeta);
+                    const timestamp = Date.now()
+                    const metaUpdates = createDatabaseMetaUpdates('coinslant-meta', coinsMeta, collectedData, timestamp);
+                    const out = addDatabaseDataUpdates('coinslant-data', 'coinslant-meta', metaUpdates, collectedData, timestamp, coinsMeta);
                     return out;
                 })
         })
-        .then(database.batchPut)
+       .then(database.batchPut)
         .then(res => {
             return {
                 statusCode: 200,
@@ -45,7 +46,7 @@ module.exports.collectData = (database, lambda, sns, config) => {
 
 const log = message => _ => (console.log(message), _)
 
-function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedData) {
+function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedData, timestamp) {
 
     return oldCoinsMeta.reduce((prev, coinMeta) => {
         const newCoinsMeta = collectedData.reduce((prev, updates) => {
@@ -55,7 +56,7 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
             else {
                 return overWriteValues(prev, updates[coinMeta.coinName].meta)
             }
-        }, coinMeta)
+        }, Object.assign(coinMeta, { "lastUpdateTime": timestamp }))
 
         //console.log('new:', JSON.stringify(newCoinsMeta, null, 2))
         prev[metaDataTableName].push({
