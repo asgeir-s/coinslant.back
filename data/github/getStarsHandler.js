@@ -3,12 +3,13 @@
   const githubSecret = require("./secret/github.json")
   var githubClient = require('octonode').client(githubSecret.token);
 }
-module.exports.getStars = (coinsMeta, context, cb) => {
+module.exports.handler = (coinsMeta, context, cb) => {
   console.log('event:', JSON.stringify(coinsMeta, null, 2))
 
   getGithubRepos(coinsMeta)
     .then(extrectStars(coinsMeta))
     .then(_ => log(`got GitHub stars for ${Object.keys(_).length} coins`)(_))
+    .then(_ => log('RESULTS:\n' + JSON.stringify(_, null, 2))(_))
     .then(res => {
       return {
         statusCode: 200,

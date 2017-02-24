@@ -45,7 +45,10 @@ provider:
 
 functions:
   getStars:
-    handler: handler.getStars
+    handler: getStarsHandler.handler
+  getNumberOfNewProjects:
+    handler: getNumberOfNewProjectsHandler.handler
+
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
