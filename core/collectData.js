@@ -12,7 +12,7 @@ module.exports.collectData = (database, lambda, sns, config) => {
                     return out;
                 })
         })
-       .then(database.batchPut)
+        .then(database.batchPut)
         .then(res => {
             return {
                 statusCode: 200,
