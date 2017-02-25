@@ -6,5 +6,10 @@ exports.sns = {
 
 exports.dataCollect = {
     retrys: 5,
-    functions: ["github-dev-getStars", "twitter-dev-getFollowers", "github-dev-getNumberOfNewProjects"]
+    functions: [
+        "github-dev-getStars",
+        "github-dev-getNumberOfNewProjects",
+        "twitter-dev-getFollowers",
+        "eddit-dev-getSubscribers"
+    ]
 }
