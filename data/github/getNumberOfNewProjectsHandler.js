@@ -53,10 +53,10 @@ const extrectNumberOfNewProjects = coinsMeta => gitHubRespondses => {
 function getProjectsSinceLastUpdate(coinsMeta) {
     const promises = coinsMeta.map((coinMeta, index) => {
         const lastUpdateTime = new Date(coinMeta.lastUpdateTime)
-        const request = `${coinMeta.coinName} created:>=${lastUpdateTime.toISOString().substr(0, 16)}`
+        const searchTerm = coinMeta.github.searchTerm ? coinMeta.github.searchTerm : coinMeta.coinName
         return new Promise((resolve, reject) => {
             ghsearch.repos({
-                q: request,
+                q: `${searchTerm} created:>=${lastUpdateTime.toISOString().substr(0, 16)}`,
                 sort: 'created',
                 order: 'asc'
             }, (err, result) => err ? reject([index, err]) : resolve([index, result]) //array of search results);
