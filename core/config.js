@@ -10,6 +10,6 @@ exports.dataCollect = {
         "github-dev-getStars",
         "github-dev-getNumberOfNewProjects",
         "twitter-dev-getFollowers",
-        "eddit-dev-getSubscribers"
+        "reddit-dev-getSubscribers"
     ]
 }
