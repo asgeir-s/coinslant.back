@@ -20,6 +20,9 @@ service: stackExchange # NOTE: update this with your service name
 provider:
   name: aws
   runtime: nodejs4.3
+  memory: 128
+  timeout: 10
+  region: us-east-1
 
 # you can overwrite defaults here
 #  stage: dev
