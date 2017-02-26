@@ -55,16 +55,19 @@ function getProjectsSinceLastUpdate(coinsMeta) {
     const lastUpdateTime = new Date(coinMeta.lastUpdateTime * 1000)
     const fromdate = parseInt(lastUpdateTime.getTime() / 1000)
     console.log('fromdate:', fromdate)
+    // TODO: this is not finished (because it is not used)
     const tag = coinMeta.stackExchange.tag ? coinMeta.stackExchange.tag : coinMeta.coinName
+    const site = coinMeta.stackExchange.site
     console.log('tag:', tag)
     return new Promise((resolve, reject) => {
       stackExchange.questions.questions({
         key: stackExchangeSecret.apiKey,
-        pagesize: 100,
+        pagesize: 200,
         tagged: tag,
         sort: 'activity',
         order: 'asc',
-        fromdate: fromdate //1486944000
+        fromdate: fromdate, //1486944000
+        api_site_parameter: site
       }, (err, result) => err ? reject([index, err]) : resolve([index, result]));
     })
   })
