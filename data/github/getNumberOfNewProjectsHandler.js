@@ -31,7 +31,7 @@ const extrectNumberOfNewProjects = coinsMeta => gitHubRespondses => {
         const body = thisRes[1]
 
         const numberOfNewProjects = body.total_count
-        const totalCreatedProjects = coinsMeta[index].projects ? coinsMeta[index].projects + numberOfNewProjects : numberOfNewProjects
+        const totalCreatedProjects = coinsMeta[index].github.projects ? coinsMeta[index].github.projects + numberOfNewProjects : numberOfNewProjects
 
         prev[coinsMeta[index].coinName] = {
             "meta": {
