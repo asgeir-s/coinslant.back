@@ -31,7 +31,7 @@ const extrectNumberOfNewQuestions = coinsMeta => gitHubRespondses => {
     const index = thisRes[0]
     const body = thisRes[1]
     const numberOfNewQuestions = body.items.length
-    const totalCreatedQuestions = coinsMeta[index].stackExchange.questions ? coinsMeta[index].stackExchange.questions + numberOfNewQuestions : numberOfNewQuestions
+    const totalCreatedQuestions = coinsMeta[index].stackExchange.questions != null ? coinsMeta[index].stackExchange.questions + numberOfNewQuestions : numberOfNewQuestions
 
     prev[coinsMeta[index].coinName] = {
       "meta": {

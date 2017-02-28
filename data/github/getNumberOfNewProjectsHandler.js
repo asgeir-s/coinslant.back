@@ -31,7 +31,7 @@ const extrectNumberOfNewProjects = coinsMeta => gitHubRespondses => {
         const body = thisRes[1]
 
         const numberOfNewProjects = body.total_count
-        const totalCreatedProjects = coinsMeta[index].github.projects ? coinsMeta[index].github.projects + numberOfNewProjects : numberOfNewProjects
+        const totalCreatedProjects = coinsMeta[index].github.projects != null ? coinsMeta[index].github.projects + numberOfNewProjects : numberOfNewProjects
 
         prev[coinsMeta[index].coinName] = {
             "meta": {
@@ -53,7 +53,7 @@ const extrectNumberOfNewProjects = coinsMeta => gitHubRespondses => {
 function getProjectsSinceLastUpdate(coinsMeta) {
     const promises = coinsMeta.map((coinMeta, index) => {
         const lastUpdateTime = new Date(coinMeta.lastUpdateTime)
-        const searchTerm = coinMeta.github.searchTerm ? coinMeta.github.searchTerm : coinMeta.coinName
+        const searchTerm = coinMeta.github.searchTerm != null ? coinMeta.github.searchTerm : coinMeta.coinName
         return new Promise((resolve, reject) => {
             ghsearch.repos({
                 q: `${searchTerm} created:>=${lastUpdateTime.toISOString().substr(0, 16)}`,

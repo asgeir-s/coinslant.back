@@ -39,7 +39,7 @@ const extrectSubcribers = coinsMeta => redditRespondses => {
     prev[coinsMeta[index].coinName] = {
       "meta": {
         "reddit": {
-          "subscribersDelta24": coinsMeta[index].reddit.subscribers ? numOfSubscribers - coinsMeta[index].reddit.subscribers : 0,
+          "subscribersDelta24": coinsMeta[index].reddit.subscribers != null ? numOfSubscribers - coinsMeta[index].reddit.subscribers : 0,
           "subscribers": numOfSubscribers
         }
       },

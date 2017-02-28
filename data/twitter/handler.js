@@ -39,7 +39,7 @@ const extractFollowers = coinsMeta => twitterUsers => {
         prev[coinMeta.coinName] = {
             "meta": {
                 "twitter": {
-                    "followersDelta24": coinMeta.twitter.followers ? newNumOfFollowers - coinMeta.twitter.followers : 0,
+                    "followersDelta24": coinMeta.twitter.followers != null ? newNumOfFollowers - coinMeta.twitter.followers : 0,
                     "followers": newNumOfFollowers
                 }
             },

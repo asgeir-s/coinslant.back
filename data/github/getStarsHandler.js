@@ -30,7 +30,7 @@ const extrectStars = coinsMeta => gitHubRespondses => {
     prev[coinsMeta[index].coinName] = {
       "meta": {
         "github": {
-          "starsDelta24": coinsMeta[index].github.stars ? newNumOfStars - coinsMeta[index].github.stars : 0,
+          "starsDelta24": coinsMeta[index].github.stars != null ? newNumOfStars - coinsMeta[index].github.stars : 0,
           "stars": newNumOfStars
         }
       },
