@@ -56,7 +56,10 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
             else {
                 return overWriteValues(prev, updates[coinMeta.coinName].meta)
             }
-        }, Object.assign(coinMeta, { "lastUpdateTime": timestamp }))
+        }, Object.assign(coinMeta, {}))
+
+        newCoinMeta.lastUpdateTime = timestamp
+        newCoinMeta.popularity = computePopularity(coinMeta)
 
         //console.log('new:', JSON.stringify(newCoinsMeta, null, 2))
         prev[metaDataTableName].push({
@@ -104,7 +107,8 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
             return prev;
         }, {
                 "coinName": coinMeta.coinName,
-                "timestamp": time
+                "timestamp": time,
+                "popularity": coinMeta.popularity
             })
 
         prevOut[dataTableName].push({
@@ -114,4 +118,11 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
         })
         return prevOut;
     }, databaseUpdates);
+}
+
+function computePopularity(coinMeta) {
+    return coinMeta.github.projectsDelta24 +
+        coinMeta.github.starsDelta24 +
+        coinMeta.reddit.subscribersDelta24 +
+        coinMeta.twitter.followersDelta24
 }
