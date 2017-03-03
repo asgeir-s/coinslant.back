@@ -81,14 +81,25 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
     }
 }
 
+function merge(destination, source) {
+    Object.keys(source).forEach(key => {
+        if (destination[key] !== null && typeof destination[key] === 'object') {
+            destination[key] = merge(destination[key], source[key])
+        }
+        else {
+            destination[key] = source[key]
+        }
+    })
+
+    return destination
+}
+
 function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, collectedData, time, coinsMeta) {
     databaseUpdates[dataTableName] = [];
     return coinsMeta.reduce((prevOut, coinMeta) => {
         const newItem = collectedData.reduce((prev, updates) => {
             if (updates[coinMeta.coinName] && updates[coinMeta.coinName].data) {
-                Object.keys(updates[coinMeta.coinName].data).forEach(key => {
-                    prev[key] = updates[coinMeta.coinName].data[key]
-                })
+                prev = merge(prev, updates[coinMeta.coinName].data)
             }
             return prev;
         }, {
