@@ -49,7 +49,7 @@ const log = message => _ => (console.log(message), _)
 function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedData, timestamp) {
 
     return oldCoinsMeta.reduce((prev, coinMeta) => {
-        const newCoinsMeta = collectedData.reduce((prev, updates) => {
+        const newCoinMeta = collectedData.reduce((prev, updates) => {
             if (!updates[coinMeta.coinName] || !updates[coinMeta.coinName].meta) {
                 return prev;
             }
@@ -61,7 +61,7 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
         //console.log('new:', JSON.stringify(newCoinsMeta, null, 2))
         prev[metaDataTableName].push({
             PutRequest: {
-                Item: newCoinsMeta
+                Item: newCoinMeta
             }
         })
         return prev;
