@@ -7,11 +7,12 @@ module.exports.collectData = (database, lambda, sns, config) => {
                 .then(log('data colected from data-colect-functions'))
                 .then(collectedData => {
                     const timestamp = Date.now()
-                    const metaUpdates = createDatabaseMetaUpdates('coinslant-meta', coinsMeta, collectedData, timestamp);
+                    const metaUpdates = createDatabaseMetaUpdates('coinslant-meta', coinsMeta, collectedData, timestamp, config.updatesPerDay);
                     const out = addDatabaseDataUpdates('coinslant-data', 'coinslant-meta', metaUpdates, collectedData, timestamp, coinsMeta);
                     return out;
                 })
         })
+        //.then( _ => log(JSON.stringify(_))(_))
         .then(database.batchPut)
         .then(res => {
             return {
@@ -46,7 +47,7 @@ module.exports.collectData = (database, lambda, sns, config) => {
 
 const log = message => _ => (console.log(message), _)
 
-function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedData, timestamp) {
+function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedData, timestamp, updatesPerDay) {
 
     return oldCoinsMeta.reduce((prev, coinMeta) => {
         const newCoinMeta = collectedData.reduce((prev, updates) => {
@@ -59,7 +60,7 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
         }, Object.assign(coinMeta, {}))
 
         newCoinMeta.lastUpdateTime = timestamp
-        newCoinMeta.popularity = computePopularity(coinMeta)
+        newCoinMeta.popularity24 = computePopularity(coinMeta)
 
         //console.log('new:', JSON.stringify(newCoinsMeta, null, 2))
         prev[metaDataTableName].push({
@@ -77,7 +78,9 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
                 destination[key] = overWriteValues(destination[key], source[key])
             }
             else {
-                destination[key] = source[key]
+                key.includes('24') && Array.isArray(destination[key])
+                    ? destination[key] = [source[key]].concat(destination[key]).slice(0, updatesPerDay)
+                    : destination[key] = source[key]
             }
         })
         return destination;
@@ -108,7 +111,7 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
         }, {
                 "coinName": coinMeta.coinName,
                 "timestamp": time,
-                "popularity": coinMeta.popularity
+                "popularity24": coinMeta.popularity24
             })
 
         prevOut[dataTableName].push({
@@ -121,8 +124,8 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
 }
 
 function computePopularity(coinMeta) {
-    return coinMeta.github.projectsDelta24 +
-        coinMeta.github.starsDelta24 +
-        coinMeta.reddit.subscribersDelta24 +
-        coinMeta.twitter.followersDelta24
+    return coinMeta.github.projectsDelta24.reduce((last, thiseNum) => last + thiseNum, 0) +
+        coinMeta.github.starsDelta24.reduce((last, thiseNum) => last + thiseNum, 0) +
+        coinMeta.reddit.subscribersDelta24.reduce((last, thiseNum) => last + thiseNum, 0) +
+        coinMeta.twitter.followersDelta24.reduce((last, thiseNum) => last + thiseNum, 0)
 }
