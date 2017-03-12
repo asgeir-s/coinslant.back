@@ -1,5 +1,7 @@
 'use strict';
 
+const compute = require('./compute')
+
 module.exports.collectData = (database, lambda, sns, config) => {
     return database.getAllItems('coinslant-meta')
         .then(coinsMeta => {
@@ -12,7 +14,7 @@ module.exports.collectData = (database, lambda, sns, config) => {
                     return out;
                 })
         })
-        //.then( _ => log(JSON.stringify(_))(_))
+        .then(_ => log(JSON.stringify(_))(_))
         .then(database.batchPut)
         .then(res => {
             return {
@@ -43,8 +45,6 @@ module.exports.collectData = (database, lambda, sns, config) => {
     }
 };
 
-
-
 const log = message => _ => (console.log(message), _)
 
 function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedData, timestamp, updatesPerDay) {
@@ -60,7 +60,30 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
         }, Object.assign(coinMeta, {}))
 
         newCoinMeta.lastUpdateTime = timestamp
-        newCoinMeta.popularity24 = computePopularity(coinMeta)
+
+        // initializ data in compute if it exists
+        if (newCoinMeta.computed != null) {
+            if (newCoinMeta.computed.communityGrowth24 == null) newCoinMeta.comput.communityGrowth24 = []
+            // if (newCoinMeta.computed.communityActivity24 == null) newCoinMeta.comput.communityActivity24 = []
+            // if (newCoinMeta.computed.developmentActivity24 == null) newCoinMeta.comput.developmentActivity24 = []
+            // if (newCoinMeta.computed.generalInterest24 == null) newCoinMeta.comput.generalInterest24 = []
+        }
+        // initialize computed if not initialized
+        else {
+            newCoinMeta.computed = {
+                "communityGrowth24": []
+                //"communityActivity24": [],
+                //"developmentActivity24": [],
+                //"generalInterest24": []
+            }
+        }
+
+        newCoinMeta.computed = overWriteValues(newCoinMeta.computed, {
+            "communityGrowth24": compute.computeCommunityGrowth(coinMeta)
+            //"communityActivity24": compute.communityActivity(coinMeta),
+            //"developmentActivity24": compute.developmentActivity(coinMeta),
+            //"generalInterest24": compute.generalInterest(coinMeta)
+        })
 
         //console.log('new:', JSON.stringify(newCoinsMeta, null, 2))
         prev[metaDataTableName].push({
@@ -111,7 +134,13 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
         }, {
                 "coinName": coinMeta.coinName,
                 "timestamp": time,
-                "popularity24": coinMeta.popularity24
+                "computed": {
+                    "communityGrowth24": coinMeta.computed.communityGrowth24.reduce((last, thiseNum) => last + thiseNum, 0)
+                    //"communityActivity24": coinMeta.computed.communityGrowth24.reduce((last, thiseNum) => last + thiseNum, 0),
+                    //"developmentActivity24": coinMeta.computed.developmentActivity24.reduce((last, thiseNum) => last + thiseNum, 0),
+                    //"generalInterest24": coinMeta.computed.generalInterest24.reduce((last, thiseNum) => last + thiseNum, 0)
+
+                }
             })
 
         prevOut[dataTableName].push({
@@ -121,11 +150,4 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
         })
         return prevOut;
     }, databaseUpdates);
-}
-
-function computePopularity(coinMeta) {
-    return coinMeta.github.projectsDelta24.reduce((last, thiseNum) => last + thiseNum, 0) +
-        coinMeta.github.starsDelta24.reduce((last, thiseNum) => last + thiseNum, 0) +
-        coinMeta.reddit.subscribersDelta24.reduce((last, thiseNum) => last + thiseNum, 0) +
-        coinMeta.twitter.followersDelta24.reduce((last, thiseNum) => last + thiseNum, 0)
 }
