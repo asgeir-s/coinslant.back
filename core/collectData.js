@@ -14,7 +14,7 @@ module.exports.collectData = (database, lambda, sns, config) => {
                     return out;
                 })
         })
-        .then(_ => log(JSON.stringify(_))(_))
+        //.then(_ => log(JSON.stringify(_))(_))
         .then(database.batchPut)
         .then(res => {
             return {
@@ -40,50 +40,36 @@ module.exports.collectData = (database, lambda, sns, config) => {
                         return collectDataFromFunction(coinsMeta, functionName, retrysLeft - 1)
                     }))
             }
-
         })
     }
 };
 
+// TEST needed
 const log = message => _ => (console.log(message), _)
 
+// TEST needed
 function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedData, timestamp, updatesPerDay) {
-
     return oldCoinsMeta.reduce((prev, coinMeta) => {
         const newCoinMeta = collectedData.reduce((prev, updates) => {
             if (!updates[coinMeta.coinName] || !updates[coinMeta.coinName].meta) {
                 return prev;
             }
             else {
-                return overWriteValues(prev, updates[coinMeta.coinName].meta)
+                return overWriteValues(prev, updates[coinMeta.coinName].meta, updatesPerDay)
             }
         }, Object.assign(coinMeta, {}))
 
         newCoinMeta.lastUpdateTime = timestamp
 
-        // initializ data in compute if it exists
-        if (newCoinMeta.computed != null) {
-            if (newCoinMeta.computed.communityGrowth24 == null) newCoinMeta.comput.communityGrowth24 = []
-            // if (newCoinMeta.computed.communityActivity24 == null) newCoinMeta.comput.communityActivity24 = []
-            // if (newCoinMeta.computed.developmentActivity24 == null) newCoinMeta.comput.developmentActivity24 = []
-            // if (newCoinMeta.computed.generalInterest24 == null) newCoinMeta.comput.generalInterest24 = []
-        }
-        // initialize computed if not initialized
-        else {
-            newCoinMeta.computed = {
-                "communityGrowth24": []
-                //"communityActivity24": [],
-                //"developmentActivity24": [],
-                //"generalInterest24": []
-            }
-        }
+        // initializ data in computed if it exists
+        if (newCoinMeta.computed == null) newCoinMeta.computed = {}
 
         newCoinMeta.computed = overWriteValues(newCoinMeta.computed, {
             "communityGrowth24": compute.computeCommunityGrowth(coinMeta)
             //"communityActivity24": compute.communityActivity(coinMeta),
             //"developmentActivity24": compute.developmentActivity(coinMeta),
             //"generalInterest24": compute.generalInterest(coinMeta)
-        })
+        }, updatesPerDay)
 
         //console.log('new:', JSON.stringify(newCoinsMeta, null, 2))
         prev[metaDataTableName].push({
@@ -94,35 +80,9 @@ function createDatabaseMetaUpdates(metaDataTableName, oldCoinsMeta, collectedDat
         return prev;
 
     }, { [metaDataTableName]: [] })
-
-    function overWriteValues(destination, source) {
-        Object.keys(source).forEach(key => {
-            if (source[key] !== null && typeof source[key] === 'object') {
-                destination[key] = overWriteValues(destination[key], source[key])
-            }
-            else {
-                key.includes('24') && Array.isArray(destination[key])
-                    ? destination[key] = [source[key]].concat(destination[key]).slice(0, updatesPerDay)
-                    : destination[key] = source[key]
-            }
-        })
-        return destination;
-    }
 }
 
-function merge(destination, source) {
-    Object.keys(source).forEach(key => {
-        if (destination[key] !== null && typeof destination[key] === 'object') {
-            destination[key] = merge(destination[key], source[key])
-        }
-        else {
-            destination[key] = source[key]
-        }
-    })
-
-    return destination
-}
-
+// TEST neede
 function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, collectedData, time, coinsMeta) {
     databaseUpdates[dataTableName] = [];
     return coinsMeta.reduce((prevOut, coinMeta) => {
@@ -135,10 +95,10 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
                 "coinName": coinMeta.coinName,
                 "timestamp": time,
                 "computed": {
-                    "communityGrowth24": coinMeta.computed.communityGrowth24.reduce((last, thiseNum) => last + thiseNum, 0)
-                    //"communityActivity24": coinMeta.computed.communityGrowth24.reduce((last, thiseNum) => last + thiseNum, 0),
-                    //"developmentActivity24": coinMeta.computed.developmentActivity24.reduce((last, thiseNum) => last + thiseNum, 0),
-                    //"generalInterest24": coinMeta.computed.generalInterest24.reduce((last, thiseNum) => last + thiseNum, 0)
+                    "communityGrowth24": coinMeta.computed.communityGrowth24
+                    //"communityActivity24": coinMeta.computed.communityActivity24,
+                    //"developmentActivity24": coinMeta.computed.developmentActivity24,
+                    //"generalInterest24": coinMeta.computed.generalInterest24
 
                 }
             })
@@ -150,4 +110,73 @@ function addDatabaseDataUpdates(dataTableName, metaTableName, databaseUpdates, c
         })
         return prevOut;
     }, databaseUpdates);
+}
+
+// TEST needed
+
+/**
+ * Overvrites or add the vaiables in soucre to destination
+ * 
+ * destination:
+ * {
+ *      "item": {
+ *          "deeper": {
+ *              "value": 1,
+ *              "stringIt": "dsad"
+ *          }     
+ *      },
+ *      "nummis": 88,
+ *      "key": "thisval"
+ * }
+ * 
+ * source:
+ * {
+ *      "item": {
+ *          "deeper": {
+ *              "value": 300
+ *          }
+ *      },
+ *      "key": "NEW""
+ * }
+ * returns:
+ * {
+ *      "item": {
+ *          "deeper": {
+ *              "value": 300,
+ *              "stringIt": "dsad"
+ *          }
+ *      },
+ *      "nummis": 88,
+ *      "key": "NEW"
+ * }
+ * 
+ * @param {any} destination 
+ * @param {any} source 
+ * @returns destination with the values in source added or overwritten
+ */
+function overWriteValues(destination, source, updatesPerDay) {
+    Object.keys(source).forEach(key => {
+        if (source[key] !== null && typeof source[key] === 'object') {
+            destination[key] = overWriteValues(destination[key], source[key], updatesPerDay)
+        }
+        else {
+            key.includes('24') && Array.isArray(destination[key])
+                ? destination[key] = [source[key]].concat(destination[key]).slice(0, updatesPerDay)
+                : destination[key] = source[key]
+        }
+    })
+    return destination;
+}
+
+// TEST neede
+function merge(destination, source) {
+    Object.keys(source).forEach(key => {
+        if (destination[key] !== null && typeof destination[key] === 'object') {
+            destination[key] = merge(destination[key], source[key])
+        }
+        else {
+            destination[key] = source[key]
+        }
+    })
+    return destination
 }
